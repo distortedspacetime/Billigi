@@ -19,10 +19,11 @@ mongoose.connect(process.env.DB_URI)
 const ItemSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: { type: String, required: true },
-  owner: {type: String, required: true},
-  borrower: {type:String, required: false},
-  status: { type: String, enum: ['available', 'borrowed'], default: 'available' },
-});
+  owner: { type: String, required: false },
+  borrower: { type:String, required: false },
+  status: { type: String, enum: ['available', 'borrowed'], required: true },
+  type: { type: String, enum: ['borrowing', 'lending'], required: true },
+}); 
 
 const Item = mongoose.model('Item', ItemSchema);
 
@@ -48,16 +49,45 @@ app.get('/api/items', async (req, res) => {
 });
 
 app.post('/api/items', async (req, res) => {
+  const { name, description, type, owner, borrower } = req.body;
+  
   const newItem = new Item({
-    name: req.body.name,
-    description: req.body.description,
-    owner: req.body.owner,
-    borrower: req.body.borrower,
-    status: req.body.status || 'available',
+    name: name,
+    description: description,
+    type: type,
+    status: 'available',
+    // 빌리기 요청인 경우 임차인을 설정, 그렇지 않으면 임대인을 설정
+    owner: type === 'lending' ? owner : undefined,
+    borrower: type === 'borrowing' ? borrower : undefined,
   });
+
   try {
     const savedItem = await newItem.save();
     res.json(savedItem);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+
+app.patch('/api/items/:id', async (req, res) => {
+  try {
+    const updateFields = { status: req.body.status };
+
+    // borrower와 owner 모두 업데이트하도록 수정
+    if (req.body.borrower) {
+      updateFields.borrower = req.body.borrower;
+    }
+    if (req.body.owner) {
+      updateFields.owner = req.body.owner;
+    }
+
+    const updatedItem = await Item.findByIdAndUpdate(
+      req.params.id,
+      updateFields, // 업데이트할 필드 객체 사용
+      { new: true }
+    );
+    res.json(updatedItem);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

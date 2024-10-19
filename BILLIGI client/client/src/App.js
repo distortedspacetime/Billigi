@@ -6,7 +6,9 @@ import { Routes, Route, Link } from 'react-router-dom';
 // ItemList 컴포넌트
 const ItemList = () => {
   const [items, setItems] = useState([]);
-  const [newItem, setNewItem] = useState({ name: '', description: '' , owner: ''});
+  const [newItem, setNewItem] = useState({ name: '', description: '', owner: '', type: 'lending', borrower: '' });
+  const [borrowerInputs, setBorrowerInputs] = useState({});
+  const [lenderInputs, setLenderInputs] = useState({});
 
   useEffect(() => {
     fetchItems();
@@ -25,17 +27,47 @@ const ItemList = () => {
     e.preventDefault();
     try {
       await axios.post('http://localhost:5000/api/items', newItem);
-      setNewItem({ name: '', description: '' ,owner: ''});
+      setNewItem({ name: '', description: '', owner: '', type: 'lending', borrower: '' });
       fetchItems();
     } catch (error) {
       console.error('Error creating item:', error);
     }
   };
 
+  const handleBorrow = async (e, item) => {
+    e.preventDefault();
+
+    const inputValue = item.type === 'lending' ? borrowerInputs[item._id] : lenderInputs[item._id];
+    if (!inputValue) {
+      alert(item.type === 'lending' ? '임차인을 입력하세요.' : '임대인을 입력하세요.');
+      return;
+    }
+
+    const updatedItem = {
+      borrower: inputValue,
+      status: item.type === 'lending' ? 'lent' : 'borrowed',
+    };
+
+    if (item.type === 'borrowing') {
+      updatedItem.owner = lenderInputs[item._id];
+    }
+
+
+    try {
+      await axios.patch(`http://localhost:5000/api/items/${item._id}`, updatedItem);
+
+      // 입력 필드 초기화 (해당 아이템만)
+      setBorrowerInputs((prevInputs) => ({ ...prevInputs, [item._id]: '' }));
+      setLenderInputs((prevInputs) => ({ ...prevInputs, [item._id]: '' }));
+
+      fetchItems();
+    } catch (error) {
+      console.error('Error borrowing item:', error);
+    }
+  };
+
   return (
     <div className="container mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-4">물품 목록</h2>
-      
       {/* 물품 등록 폼 */}
       <form onSubmit={handleSubmit} className="mb-6">
         <div className="mb-4">
@@ -43,7 +75,7 @@ const ItemList = () => {
             type="text"
             placeholder="물품명"
             value={newItem.name}
-            onChange={(e) => setNewItem({...newItem, name: e.target.value})}
+            onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
             className="border p-2 rounded w-full"
           />
         </div>
@@ -51,43 +83,94 @@ const ItemList = () => {
           <textarea
             placeholder="설명"
             value={newItem.description}
-            onChange={(e) => setNewItem({...newItem, description: e.target.value})}
+            onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
             className="border p-2 rounded w-full"
           />
         </div>
         <div className="mb-4">
-          <input
-            type = "text"
-            placeholder="임대인"
-            value={newItem.owner}
-            onChange={(e) => setNewItem({...newItem, owner: e.target.value})}
+          <select
+            value={newItem.type}
+            onChange={(e) => setNewItem({ ...newItem, type: e.target.value })}
             className="border p-2 rounded w-full"
-          />
+          >
+            <option value="lending">빌려주기</option>
+            <option value="borrowing">빌리기 요청</option>
+          </select>
         </div>
+        {newItem.type === 'lending' ? (
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="임대인"
+              value={newItem.owner}
+              onChange={(e) => setNewItem({ ...newItem, owner: e.target.value })}
+              className="border p-2 rounded w-full"
+            />
+          </div>
+        ) : (
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="임차인"
+              value={newItem.borrower}  // 이 부분은 등록 시에는 사용되지 않지만, 일관성을 위해 남겨둡니다.
+              onChange={(e) => setNewItem({ ...newItem, borrower: e.target.value })}
+              className="border p-2 rounded w-full"
+            />
+          </div>
+        )}
         <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded">
           물품 등록
         </button>
       </form>
 
       {/* 물품 목록 */}
+      <h2 className="text-2xl font-bold mb-4">물품 목록</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {items.map((item) => (
           <div key={item._id} className="border p-4 rounded shadow">
             <h3 className="font-bold">{item.name}</h3>
+            <p className="text-sm text-blue-500">
+              {item.type === 'lending' ? '빌려주기' : '빌리기'}
+            </p>
             <p className="text-gray-400">임대인: {item.owner}</p>
+            <p className='text-gray-400'>임차인: {item.borrower}</p>
             <p>{item.description}</p>
             <p className="mt-2">
-              상태: <span className="text-blue-500">{item.status}</span>
+              상태: <span className={`${item.status === 'available' ? 'text-blue-500' : 'text-red-500'} font-bold`}>
+                {item.status === 'available' ? '대여 가능' : '대여 중'}
+              </span>
             </p>
-            <button type = "submit" className="bg-blue-500 text-white px-4 py-2 rounded mt-3">
-              빌리기
-            </button>
-            <span><input
-            type="text"
-            placeholder="임차인"
-            value={newItem.borrower}
-            className="border p-2 rounded mt-2 ml-3"
-            /></span>
+
+            {item.type === 'lending' && item.status === 'available' && (
+              <form onSubmit={(e) => handleBorrow(e, item)}>
+                <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded mt-3">
+                  빌리기
+                </button>
+                <input
+                  type="text"
+                  placeholder="임차인"
+                  value={borrowerInputs[item._id] || ''}
+                  onChange={(e) => setBorrowerInputs((prevInputs) => ({ ...prevInputs, [item._id]: e.target.value }))}
+                  className="border p-2 rounded mt-2 ml-3"
+                  required
+                />
+              </form>
+            )}
+            {item.type === 'borrowing' && item.status === 'available' && (
+              <form onSubmit={(e) => handleBorrow(e, item)}>
+                <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded mt-3">
+                  빌려주기
+                </button>
+                <input
+                  type="text"
+                  placeholder="임대인"
+                  value={lenderInputs[item._id] || ''}
+                  onChange={(e) => setLenderInputs((prevInputs) => ({ ...prevInputs, [item._id]: e.target.value }))}
+                  className="border p-2 rounded mt-2 ml-3"
+                  required
+                />
+              </form>
+            )}
           </div>
         ))}
       </div>
