@@ -38,6 +38,17 @@ const LostFoundSchema = new mongoose.Schema({
 
 const LostFound = mongoose.model('LostFound', LostFoundSchema);
 
+
+app.get("/", (req, res) => {
+  try {
+    // MongoDB 연결 상태 확인
+    const dbStatus = mongoose.connection.readyState === 1 ? '연결됨' : '연결되지 않음';
+    res.json({ message: "Express on Vercel", dbStatus: dbStatus });
+  } catch (error) {
+    res.status(500).json({ message: "서버 오류", error: error.message });
+  }
+});
+
 // 아이템 관련 라우트
 app.get('/api/items', async (req, res) => {
   try {
@@ -56,7 +67,6 @@ app.post('/api/items', async (req, res) => {
     description: description,
     type: type,
     status: 'available',
-    // 빌리기 요청인 경우 임차인을 설정, 그렇지 않으면 임대인을 설정
     owner: type === 'lending' ? owner : undefined,
     borrower: type === 'borrowing' ? borrower : undefined,
   });
@@ -68,7 +78,6 @@ app.post('/api/items', async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 });
-
 
 app.patch('/api/items/:id', async (req, res) => {
   try {
@@ -120,3 +129,6 @@ app.post('/api/lostfound', async (req, res) => {
 // 서버 시작
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`서버가 포트 ${PORT}에서 실행 중입니다.`));
+
+//Vercel 배포용
+module.exports = app;

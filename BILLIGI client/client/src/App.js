@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Routes, Route, Link } from 'react-router-dom';
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 // ItemList 컴포넌트
 const ItemList = () => {
   const [items, setItems] = useState([]);
@@ -16,7 +18,7 @@ const ItemList = () => {
 
   const fetchItems = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/items');
+      const response = await axios.get(`${API_URL}/api/items`);
       setItems(response.data);
     } catch (error) {
       console.error('Error fetching items:', error);
@@ -26,7 +28,7 @@ const ItemList = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/items', newItem);
+      await axios.post(`${API_URL}/api/items`, newItem);
       setNewItem({ name: '', description: '', owner: '', type: 'lending', borrower: '' });
       fetchItems();
     } catch (error) {
@@ -54,7 +56,7 @@ const ItemList = () => {
 
 
     try {
-      await axios.patch(`http://localhost:5000/api/items/${item._id}`, updatedItem);
+      await axios.patch(`${API_URL}/api/items/${item._id}`, updatedItem);
 
       // 입력 필드 초기화 (해당 아이템만)
       setBorrowerInputs((prevInputs) => ({ ...prevInputs, [item._id]: '' }));
@@ -193,7 +195,7 @@ const LostFound = () => {
 
   const fetchReports = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/lostfound');
+      const response = await axios.get(`${API_URL}/api/lostfound`);
       setReports(response.data);
     } catch (error) {
       console.error('Error fetching reports:', error);
@@ -203,7 +205,7 @@ const LostFound = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/lostfound', newReport);
+      await axios.post(`${API_URL}/api/lostfound`, newReport);
       setNewReport({ title: '', description: '', status: 'lost' });
       fetchReports();
     } catch (error) {
