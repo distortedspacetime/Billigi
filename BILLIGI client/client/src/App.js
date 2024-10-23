@@ -44,12 +44,13 @@ const ItemList = () => {
     }
 
     const updatedItem = {
-      borrower: inputValue,
       status: item.type === 'lending' ? 'lent' : 'borrowed',
     };
-
-    if (item.type === 'borrowing') {
-      updatedItem.owner = lenderInputs[item._id];
+  
+    if (item.type === 'lending') {
+      updatedItem.borrower = inputValue;
+    } else {
+      updatedItem.owner = inputValue;
     }
 
 
