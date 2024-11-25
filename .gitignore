@@ -1,5 +1,3 @@
 .env
-"start client.bat"
-"start server.bat"
-stop.bat
+*.bat
 build
