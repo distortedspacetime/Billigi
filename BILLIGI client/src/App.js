@@ -282,8 +282,8 @@ const LostFound = ({ userName }) => {
   );
 };
 
-// Combined 컴포넌트 (로그인 및 회원가입 기능 포함)
-const Combined = ({ onLogin }) => {
+// AuthForm 컴포넌트 (로그인 및 회원가입 기능 포함)
+const AuthForm = ({ onLogin }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -509,8 +509,8 @@ const App = () => {
 
       <Routes>
         <Route path="/" element={<Main />} />
-        <Route path="/login" element={<Combined onLogin={handleLogin} />} />
-        <Route path='/register' element={<Combined />} />
+        <Route path="/login" element={<AuthForm onLogin={handleLogin} />} />
+        <Route path='/register' element={<AuthForm />} />
         <Route path="/billigi" element={isLoggedIn ? <ItemList userName={userName} /> : <Navigate to="/" />} /> {/*로그인 상태 확인*/}
         <Route path="/bunsilmul" element={isLoggedIn ? <LostFound userName={userName} /> : <Navigate to="/" />} /> {/*로그인 상태 확인*/}
       </Routes>     
