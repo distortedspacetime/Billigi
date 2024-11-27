@@ -86,7 +86,7 @@ const ItemList = ({ userName }) => {
     <div className="container mx-auto p-4">
       {/* 물품 등록 폼 */}
       <form onSubmit={handleSubmit} className="mb-6">
-        <h2 className="text-2xl font-bold mb-4">분실물/습득물</h2>
+        <h2 className="text-2xl font-bold mb-4">빌리기/빌려주기</h2>
         <div className="mb-4">
           <input
             type="text"
